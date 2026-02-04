@@ -5,6 +5,7 @@ import StockSummary from './components/StockSummary';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import { AuthContext } from './context/AuthContext';
+import StockSearch from './components/StockSearch';
 
 import './index.css';
 
@@ -43,6 +44,7 @@ function App() {
       </header>
 
       <main className="max-w-6xl mx-auto px-8">
+        <StockSearch onSelectStock={(stock)=>alert(`selected :${stock.symbol}`)} />
         <StockSummary refreshTrigger={refreshTrigger} />
         <AddStock onStockAdded={handleStockAdded} />
         <StockList refreshTrigger={refreshTrigger} onStockUpdated={handleStockAdded} />

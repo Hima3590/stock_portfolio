@@ -3,6 +3,7 @@ import cors from 'cors';
 import stockRoutes from './routes/stockRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 
+
 const app = express();
 app.use(cors());
 

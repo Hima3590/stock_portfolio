@@ -26,3 +26,21 @@ export const updateStock = async (id, data) =>
 
 export const getStockSummary = async () =>
   (await axiosInstance.get(`${API_URL}/summary`)).data;
+
+// Search stocks by symbol or name
+export const searchStocks = (query) => {
+  return axiosInstance.get(`${API_URL}/search`, { params: { q: query } })
+    .then(res => res.data);
+};
+
+// Get live price (public)
+export const getLivePrice = (symbol) => {
+  return axiosInstance.get(`${API_URL}/price`, { params: { symbol } })
+    .then(res => res.data);
+};
+
+// Get portfolio stock info (protected)
+export const getPortfolioStockInfo = (symbol) => {
+  return axiosInstance.get(`${API_URL}/portfolio/${symbol}`)
+    .then(res => res.data);
+};
