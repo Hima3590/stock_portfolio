@@ -3,7 +3,7 @@ import { getAllStocks, deleteStock ,updateStock} from '../api/stockApi';
 
 
 
-export default function StockList({ refreshTrigger }) {
+export default function StockList({ refreshTrigger, onStockUpdated }) {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -80,7 +80,9 @@ export default function StockList({ refreshTrigger }) {
       await updateStock(stockId, editedStock);
       setEditingId(null);
       fetchStocks();
-      
+      if (onStockUpdated) {
+        onStockUpdated();
+      }
     } catch (err) {
       console.error('Error updating stock:', err);
       alert(err.response?.data?.error || 'Failed to update stock');

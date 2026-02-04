@@ -6,7 +6,8 @@ export const createStock = async (req, res) => {
     const stock = await Stock.create({
       symbol,
       quantity,
-      buyPrice
+      buyPrice,
+      user:req.userId
     });
     return res.status(201).json(stock);
   } catch (error) {
@@ -16,7 +17,7 @@ export const createStock = async (req, res) => {
 
 export const getAllStocks = async (req, res) => {
   try {
-    const stocks = await Stock.find();
+    const stocks = await Stock.find({user:req.userId});
     return res.status(200).json(stocks);
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -29,7 +30,7 @@ export const updateStock = async (req, res) => {
     const { quantity, buyPrice } = req.body;
     
     const stock = await Stock.findByIdAndUpdate(
-      id,
+      {_id:id,user:req.userId},
       { quantity, buyPrice },
       { new: true }
     );
@@ -47,7 +48,10 @@ export const updateStock = async (req, res) => {
 export const deleteStock = async (req, res) => {
   try {
     const { id } = req.params;
-    const stock = await Stock.findByIdAndDelete(id);
+    const stock = await Stock.findByIdAndDelete({
+      _id:id,
+      user:req.userId
+    });
     
     if (!stock) {
       return res.status(404).json({ error: 'Stock not found' });
@@ -61,7 +65,7 @@ export const deleteStock = async (req, res) => {
 
 export const getPortfolioSummary = async (req, res) => {
   try {
-    const stocks = await Stock.find();
+    const stocks = await Stock.find({user:req.userId});
 
     let totalInvested = 0;
     let totalQuantity = 0;

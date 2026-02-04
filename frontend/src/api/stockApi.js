@@ -1,32 +1,28 @@
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL + '/stocks';
 
+const axiosInstance = axios.create();
 
-const API_URL = process.env.REACT_APP_API_URL;
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
+export const addStock = async (data) =>
+  (await axiosInstance.post(API_URL, data)).data;
 
-export const addStock = async (stockData) => {
-  const response = await axios.post(API_URL, stockData);
-  return response.data;
-};
+export const getAllStocks = async () =>
+  (await axiosInstance.get(API_URL)).data;
 
-export const getAllStocks = async () => {
-  const response = await axios.get(API_URL);
-  return response.data;
-};
+export const deleteStock = async (id) =>
+  (await axiosInstance.delete(`${API_URL}/${id}`)).data;
 
-export const deleteStock = async (id) => {
-    const response = await axios.delete(`${API_URL}/${id}`);
-    return response.data;
-  };
+export const updateStock = async (id, data) =>
+  (await axiosInstance.put(`${API_URL}/${id}`, data)).data;
 
-  export const updateStock = async (id, stockData) => {
-    const response = await axios.put(`${API_URL}/${id}`, stockData);
-    return response.data;
-  };
-  export const getStockSummary = async () => {
-  const response = await axios.get(`${API_URL}/summary`);
-  return response.data;
-};
-
-  
+export const getStockSummary = async () =>
+  (await axiosInstance.get(`${API_URL}/summary`)).data;
