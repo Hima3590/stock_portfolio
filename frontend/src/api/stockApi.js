@@ -24,3 +24,9 @@ export const deleteStock = async (id) => {
     const response = await axios.put(`${API_URL}/${id}`, stockData);
     return response.data;
   };
+  export const getStockSummary = async () => {
+  const response = await axios.get(`${API_URL}/summary`);
+  return response.data;
+};
+
+  

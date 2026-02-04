@@ -1,10 +1,11 @@
 import express from 'express';
-import { createStock, getAllStocks, updateStock, deleteStock } from '../controllers/stockController.js';
+import { createStock, getAllStocks, updateStock, deleteStock, getPortfolioSummary } from '../controllers/stockController.js';
 
 const router = express.Router();
 
 router.post('/', createStock);
 router.get('/', getAllStocks);
+router.get('/summary', getPortfolioSummary);
 router.put('/:id', updateStock);
 router.delete('/:id', deleteStock);
 

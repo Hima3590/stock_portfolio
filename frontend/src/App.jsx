@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import AddStock from './components/AddStock';
 import StockList from './components/StockList';
+import StockSummary from './components/StockSummary';
+
 import './index.css';
 
 function App() {
@@ -17,6 +19,7 @@ function App() {
         <h1 className="text-3xl font-bold m-0">Stock Portfolio Tracker</h1>
       </header>
       <main className="max-w-6xl mx-auto px-8">
+        <StockSummary refreshTrigger={refreshTrigger} />
         <AddStock onStockAdded={handleStockAdded} />
         <StockList refreshTrigger={refreshTrigger} />
       </main>

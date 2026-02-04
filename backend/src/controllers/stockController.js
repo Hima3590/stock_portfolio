@@ -58,3 +58,26 @@ export const deleteStock = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+export const getPortfolioSummary = async (req, res) => {
+  try {
+    const stocks = await Stock.find();
+
+    let totalInvested = 0;
+    let totalQuantity = 0;
+
+    for (let stock of stocks) {
+      totalInvested += stock.quantity * stock.buyPrice;
+      totalQuantity += stock.quantity;
+    }
+
+    return res.status(200).json({
+      totalStocks: stocks.length,
+      totalQuantity,
+      totalInvested
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
