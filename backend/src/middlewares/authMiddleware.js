@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
+  console.log('Authorization Header:', authHeader);
+  console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✓ Set' : '✗ Not set');
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Access denied. No token provided.' });
   }
@@ -14,6 +17,7 @@ const authMiddleware = (req, res, next) => {
     req.userId = decoded.userId;
     next();
   } catch (error) {
+    console.error('Token verification error:', error.message);
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 };

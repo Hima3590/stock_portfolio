@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { searchStocks, getPortfolioStockInfo } from '../api/stockApi';
+import { searchStocks, getPortfolioStockInfo, getLivePrice } from '../api/stockApi';
 
 export default function StockSearch({ onSelectStock }) {
   const [query, setQuery] = useState('');
@@ -31,7 +31,7 @@ export default function StockSearch({ onSelectStock }) {
     }
   };
 
-  // Fetch portfolio info
+  // Fetch portfolio info or live price
   const handleSelectStock = async (stock) => {
     onSelectStock(stock);
     setStockInfo(null);
@@ -39,11 +39,31 @@ export default function StockSearch({ onSelectStock }) {
     setInfoLoading(true);
 
     try {
+      // Try to get portfolio info first (includes profit/loss if in portfolio)
       const data = await getPortfolioStockInfo(stock.symbol);
       setStockInfo(data);
     } catch (err) {
-      console.error(err.response || err.message);
-      setInfoError('Failed to fetch stock info.');
+      // If not in portfolio (404), just get live price
+      if (err.response?.status === 404) {
+        try {
+          const priceData = await getLivePrice(stock.symbol);
+          setStockInfo({
+            symbol: priceData.symbol,
+            currentPrice: priceData.price,
+            buyPrice: null,
+            quantity: null,
+            profitLoss: null,
+            percentChange: null,
+            notInPortfolio: true
+          });
+        } catch (priceErr) {
+          console.error(priceErr);
+          setInfoError('Stock not in your portfolio. Add it first to track profit/loss.');
+        }
+      } else {
+        console.error(err.response || err.message);
+        setInfoError('Failed to fetch stock info.');
+      }
     } finally {
       setInfoLoading(false);
     }
@@ -87,18 +107,24 @@ export default function StockSearch({ onSelectStock }) {
       {stockInfo && (
         <div className="mt-2 p-2 border rounded-md bg-gray-50">
           <p><strong>Live Price:</strong> ${stockInfo.currentPrice.toFixed(2)}</p>
-          <p>
-            <strong>Profit / Loss:</strong>{' '}
-            <span className={parseFloat(stockInfo.profitLoss) >= 0 ? 'text-green-600' : 'text-red-600'}>
-              ${stockInfo.profitLoss}
-            </span>
-          </p>
-          <p>
-            <strong>% Change:</strong>{' '}
-            <span className={parseFloat(stockInfo.percentChange) >= 0 ? 'text-green-600' : 'text-red-600'}>
-              {stockInfo.percentChange}%
-            </span>
-          </p>
+          {stockInfo.notInPortfolio ? (
+            <p className="text-gray-600 italic mt-2">Add this stock to your portfolio to track profit/loss</p>
+          ) : (
+            <>
+              <p>
+                <strong>Profit / Loss:</strong>{' '}
+                <span className={parseFloat(stockInfo.profitLoss) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                  ${stockInfo.profitLoss}
+                </span>
+              </p>
+              <p>
+                <strong>% Change:</strong>{' '}
+                <span className={parseFloat(stockInfo.percentChange) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                  {stockInfo.percentChange}%
+                </span>
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>

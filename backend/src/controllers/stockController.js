@@ -1,30 +1,39 @@
 import Stock from '../models/Stock.js';
 import axios from 'axios';
-import Portfolio from '../models/Portfolio.js';
 
-const API_KEY=process.env.ALPHA_VANTAGE_API_KEY;
+const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
+
+/* ===============================
+   CRUD
+================================ */
 
 export const createStock = async (req, res) => {
   try {
     const { symbol, quantity, buyPrice } = req.body;
+
+    if (!symbol || !quantity || !buyPrice) {
+      return res.status(400).json({ error: 'symbol, quantity, buyPrice are required' });
+    }
+
     const stock = await Stock.create({
-      symbol,
+      symbol: symbol.toUpperCase(),
       quantity,
       buyPrice,
-      user:req.userId
+      user: req.userId
     });
-    return res.status(201).json(stock);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+
+    res.status(201).json(stock);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
 export const getAllStocks = async (req, res) => {
   try {
-    const stocks = await Stock.find({user:req.userId});
-    return res.status(200).json(stocks);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+    const stocks = await Stock.find({ user: req.userId });
+    res.json(stocks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -32,158 +41,240 @@ export const updateStock = async (req, res) => {
   try {
     const { id } = req.params;
     const { quantity, buyPrice } = req.body;
-    
-    const stock = await Stock.findByIdAndUpdate(
-      {_id:id,user:req.userId},
+
+    const stock = await Stock.findOneAndUpdate(
+      { _id: id, user: req.userId },
       { quantity, buyPrice },
       { new: true }
     );
-    
+
     if (!stock) {
       return res.status(404).json({ error: 'Stock not found' });
     }
-    
-    return res.status(200).json(stock);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+
+    res.json(stock);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
 export const deleteStock = async (req, res) => {
   try {
     const { id } = req.params;
-    const stock = await Stock.findByIdAndDelete({
-      _id:id,
-      user:req.userId
+
+    const stock = await Stock.findOneAndDelete({
+      _id: id,
+      user: req.userId
     });
-    
+
     if (!stock) {
       return res.status(404).json({ error: 'Stock not found' });
     }
-    
-    return res.status(200).json({ message: 'Stock deleted successfully' });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+
+    res.json({ message: 'Stock deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-export const getPortfolioSummary = async (req, res) => {
-  try {
-    const stocks = await Stock.find({user:req.userId});
-
-    let totalInvested = 0;
-    let totalQuantity = 0;
-
-    for (let stock of stocks) {
-      totalInvested += stock.quantity * stock.buyPrice;
-      totalQuantity += stock.quantity;
-    }
-
-    return res.status(200).json({
-      totalStocks: stocks.length,
-      totalQuantity,
-      totalInvested
-    });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-};
+/* ===============================
+   Feature 8 – Search stocks
+================================ */
 
 export const searchStock = async (req, res) => {
   try {
-    const query = req.query.q;
-    if (!query) {
-      return res.status(400).json({ error: 'Query parameter "q" is required' });
-    }
+    const { q } = req.query;
+    if (!q) return res.status(400).json({ error: 'Query q is required' });
 
-    // Example using Alpha Vantage SYMBOL_SEARCH endpoint
-    const url = `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${query}&apikey=${API_KEY}`;
-
+    const url = `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${q}&apikey=${API_KEY}`;
     const response = await axios.get(url);
-    const bestMatches = response.data.bestMatches || [];
 
-    // Transform API response to something simple
-    const results = bestMatches.map(match => ({
+    const results = (response.data.bestMatches || []).map(match => ({
       symbol: match['1. symbol'],
       name: match['2. name'],
-      type: match['3. type'],
-      region: match['4. region'],
-      marketOpen: match['5. marketOpen'],
-      marketClose: match['6. marketClose'],
-      timezone: match['7. timezone'],
-      currency: match['8. currency'],
-      matchScore: match['9. matchScore']
+      region: match['4. region']
     }));
 
-    return res.status(200).json(results);
-
-  } catch (error) {
-    console.error(error.message);
-    return res.status(500).json({ error: 'Failed to search stocks' });
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to search stocks' });
   }
 };
 
+/* ===============================
+   Feature 9 – Live price (public)
+================================ */
 
-// GET /api/stocks/price?symbol=AAPL
-
-// Feature 9: Get live price (public)
 export const getLivePrice = async (req, res) => {
   try {
     const { symbol } = req.query;
-    if (!symbol) return res.status(400).json({ error: 'Symbol is required' });
+    if (!symbol) return res.status(400).json({ error: 'Symbol required' });
 
-    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`;
+    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`;
     const response = await axios.get(url);
     const quote = response.data['Global Quote'];
 
     if (!quote || !quote['05. price']) {
-      return res.status(400).json({ error: 'Failed to fetch live price' });
+      return res.status(400).json({ error: 'Price unavailable' });
     }
 
-    res.json({ symbol, price: parseFloat(quote['05. price']) });
+    res.json({
+      symbol,
+      price: parseFloat(quote['05. price'])
+    });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Unable to fetch stock price' });
+    res.status(500).json({ error: 'Unable to fetch live price' });
   }
 };
 
-// Feature 10: Get live price + real portfolio profit/loss
+/* ===============================
+   Feature 10 – Stock P/L
+================================ */
+
 export const getPortfolioStockInfo = async (req, res) => {
   try {
-    const symbol = req.params.symbol;
-    const userId = req.userId; // comes from authMiddleware
+    const { symbol } = req.params;
 
-    // Fetch user's portfolio entry
-    const entry = await Stock.findOne({ user: userId, symbol });
-    if (!entry) return res.status(404).json({ error: 'Stock not in your portfolio' });
+    const stock = await Stock.findOne({
+      user: req.userId,
+      symbol: symbol.toUpperCase()
+    });
 
-    const { buyPrice, quantity } = entry;
-
-    // Fetch live price
-    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`;
-    const response = await axios.get(url);
-    const quote = response.data['Global Quote'];
-
-    if (!quote || !quote['05. price']) {
-      return res.status(400).json({ error: 'Failed to fetch live price' });
+    if (!stock) {
+      return res.status(404).json({ error: 'Stock not in portfolio' });
     }
 
-    const currentPrice = parseFloat(quote['05. price']);
+    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`;
+    const response = await axios.get(url);
+    const currentPrice = parseFloat(response.data['Global Quote']['05. price']);
 
-    // Calculate profit/loss
-    const profitLoss = (currentPrice - buyPrice) * quantity;
-    const percentChange = ((currentPrice - buyPrice) / buyPrice) * 100;
+    const currentValue = currentPrice * stock.quantity;
+    const investedValue = stock.buyPrice * stock.quantity;
+    const profitLoss = currentValue - investedValue;
+    const percentChange = (profitLoss / investedValue) * 100;
 
     res.json({
       symbol,
       currentPrice,
-      buyPrice,
-      quantity,
+      buyPrice: stock.buyPrice,
+      quantity: stock.quantity,
       profitLoss: profitLoss.toFixed(2),
       percentChange: percentChange.toFixed(2)
     });
   } catch (err) {
-    console.error(err.message);
     res.status(500).json({ error: 'Unable to fetch stock info' });
+  }
+};
+
+/* ===============================
+   🔥 Feature 11 – Portfolio Overview
+================================ */
+
+export const getPortfolioOverview = async (req, res) => {
+  try {
+    const userId = req.userId;
+    console.log('Fetching portfolio overview for user:', userId);
+
+    const stocks = await Stock.find({ user: userId });
+    console.log(`Found ${stocks.length} stocks`);
+
+    let totalInvested = 0;
+    let currentValue = 0;
+
+    for (const stock of stocks) {
+      const investedValue = stock.buyPrice * stock.quantity;
+      const stockCurrentValue = (stock.currentPrice || stock.buyPrice) * stock.quantity;
+
+      totalInvested += investedValue;
+      currentValue += stockCurrentValue;
+
+      console.log(`Stock ${stock.symbol}: Invested=${investedValue}, Current=${stockCurrentValue}`);
+    }
+
+    const profitLoss = currentValue - totalInvested;
+    const profitLossPercent = totalInvested === 0 ? 0 : (profitLoss / totalInvested) * 100;
+
+    const response = {
+      totalInvested: Number(totalInvested.toFixed(2)),
+      currentValue: Number(currentValue.toFixed(2)),
+      profitLoss: Number(profitLoss.toFixed(2)),
+      profitLossPercent: Number(profitLossPercent.toFixed(2))
+    };
+
+    console.log('Portfolio overview:', response);
+    res.json(response);
+  } catch (err) {
+    console.error('Error fetching portfolio overview:', err);
+    res.status(500).json({ error: 'Unable to fetch portfolio overview' });
+  }
+};
+
+
+/* ===============================
+   Feature 12 – Stock Summary
+================================ */
+
+export const getStockSummary = async (req, res) => {
+  try {
+    const userId = req.userId;
+    console.log('Fetching stock summary for user:', userId);
+
+    const stocks = await Stock.find({ user: userId });
+    console.log(`Found ${stocks.length} stocks`);
+
+    let totalQuantity = 0;
+    let totalInvested = 0;
+
+    for (const stock of stocks) {
+      totalQuantity += stock.quantity;
+      totalInvested += stock.buyPrice * stock.quantity;
+    }
+
+    const response = {
+      totalStocks: stocks.length,
+      totalQuantity,
+      totalInvested: Number(totalInvested.toFixed(2))
+    };
+
+    console.log('Stock summary:', response);
+    res.json(response);
+  } catch (err) {
+    console.error('Error fetching stock summary:', err);
+    res.status(500).json({ error: 'Unable to fetch stock summary' });
+  }
+};
+
+/* ===============================
+   Feature 12 – Portfolio Breakdown (Chart Data)
+================================ */
+
+export const getPortfolioBreakdown = async (req, res) => {
+  try {
+    const userId = req.userId;
+    console.log('Fetching portfolio breakdown for user:', userId);
+
+    const stocks = await Stock.find({ user: userId });
+    console.log(`Found ${stocks.length} stocks`);
+
+    const breakdown = stocks.map((stock) => {
+      const investedValue = stock.buyPrice * stock.quantity;
+      const currentValue = (stock.currentPrice || stock.buyPrice) * stock.quantity;
+
+      return {
+        symbol: stock.symbol,
+        quantity: Number(stock.quantity),
+        buyPrice: Number(stock.buyPrice),
+        currentPrice: Number(stock.currentPrice || stock.buyPrice),
+        investedValue: Number(investedValue.toFixed(2)),
+        currentValue: Number(currentValue.toFixed(2)),
+        profitLoss: Number((currentValue - investedValue).toFixed(2))
+      };
+    });
+
+    console.log('Portfolio breakdown:', breakdown);
+    res.json(breakdown);
+  } catch (err) {
+    console.error('Error fetching portfolio breakdown:', err);
+    res.status(500).json({ error: 'Unable to fetch portfolio breakdown' });
   }
 };

@@ -39,6 +39,12 @@ export const getLivePrice = (symbol) => {
     .then(res => res.data);
 };
 
+// Get portfolio overview (protected)
+export const getPortfolioOverview = () => {
+  return axiosInstance.get(`${API_URL}/portfolio/overview`)
+    .then(res => res.data);
+};
+
 // Get portfolio stock info (protected)
 export const getPortfolioStockInfo = (symbol) => {
   return axiosInstance.get(`${API_URL}/portfolio/${symbol}`)

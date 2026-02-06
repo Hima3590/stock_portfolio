@@ -2,6 +2,8 @@ import { useState, useContext } from 'react';
 import AddStock from './components/AddStock';
 import StockList from './components/StockList';
 import StockSummary from './components/StockSummary';
+import PortfolioOverview from './components/PortfolioOverview';
+import PortfolioCharts from './components/PortfolioCharts';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import { AuthContext } from './context/AuthContext';
@@ -46,6 +48,8 @@ function App() {
       <main className="max-w-6xl mx-auto px-8">
         <StockSearch onSelectStock={(stock)=>alert(`selected :${stock.symbol}`)} />
         <StockSummary refreshTrigger={refreshTrigger} />
+        <PortfolioOverview />
+        <PortfolioCharts refreshTrigger={refreshTrigger} />
         <AddStock onStockAdded={handleStockAdded} />
         <StockList refreshTrigger={refreshTrigger} onStockUpdated={handleStockAdded} />
       </main>
