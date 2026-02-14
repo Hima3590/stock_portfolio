@@ -22,7 +22,7 @@ function App() {
   // 🔐 NOT LOGGED IN
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen">
         {showRegister ? (
           <Register onSwitch={() => setShowRegister(false)} />
         ) : (
@@ -34,18 +34,18 @@ function App() {
 
   // ✅ LOGGED IN
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-gray-100 p-8 mb-8 flex justify-between items-center">
-        <h1 className="text-3xl font-bold m-0">Stock Portfolio Tracker</h1>
+    <div className="min-h-screen bg-gray-950 text-white">
+      <header className="bg-black border-b border-gray-800 p-8 flex justify-between items-center shadow-lg">
+        <h1 className="text-4xl font-bold m-0 text-white">📈 Portfolio Tracker</h1>
         <button
-          onClick={logout} // 🔹 reactive logout
-          className="px-4 py-2 bg-red-600 text-white rounded"
+          onClick={logout}
+          className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
         >
           Logout
         </button>
       </header>
 
-      <main className="max-w-6xl mx-auto px-8">
+      <main className="max-w-7xl mx-auto px-8 py-12">
         <StockSearch onSelectStock={(stock)=>alert(`selected :${stock.symbol}`)} />
         <StockSummary refreshTrigger={refreshTrigger} />
         <PortfolioOverview />

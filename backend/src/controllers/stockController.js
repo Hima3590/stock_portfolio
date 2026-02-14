@@ -15,10 +15,25 @@ export const createStock = async (req, res) => {
       return res.status(400).json({ error: 'symbol, quantity, buyPrice are required' });
     }
 
+    // Fetch current price from Alpha Vantage API
+    let currentPrice = buyPrice; // Default to buyPrice if API fails
+    try {
+      const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`;
+      const response = await axios.get(url);
+      const quote = response.data['Global Quote'];
+      if (quote && quote['05. price']) {
+        currentPrice = parseFloat(quote['05. price']);
+      }
+    } catch (apiErr) {
+      console.error('Error fetching current price from API:', apiErr.message);
+      // Continue with default (buyPrice)
+    }
+
     const stock = await Stock.create({
       symbol: symbol.toUpperCase(),
       quantity,
       buyPrice,
+      currentPrice,
       user: req.userId
     });
 
@@ -182,8 +197,25 @@ export const getPortfolioOverview = async (req, res) => {
     let currentValue = 0;
 
     for (const stock of stocks) {
+      let stockCurrentPrice = stock.currentPrice || stock.buyPrice;
+      
+      // Fetch live price from API
+      try {
+        const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${stock.symbol}&apikey=${API_KEY}`;
+        const response = await axios.get(url);
+        const quote = response.data['Global Quote'];
+        if (quote && quote['05. price']) {
+          stockCurrentPrice = parseFloat(quote['05. price']);
+          // Update the stock's currentPrice in database
+          await Stock.findByIdAndUpdate(stock._id, { currentPrice: stockCurrentPrice });
+        }
+      } catch (apiErr) {
+        console.error(`Error fetching price for ${stock.symbol}:`, apiErr.message);
+        // Use stored currentPrice or fallback to buyPrice
+      }
+
       const investedValue = stock.buyPrice * stock.quantity;
-      const stockCurrentValue = (stock.currentPrice || stock.buyPrice) * stock.quantity;
+      const stockCurrentValue = stockCurrentPrice * stock.quantity;
 
       totalInvested += investedValue;
       currentValue += stockCurrentValue;
@@ -224,16 +256,36 @@ export const getStockSummary = async (req, res) => {
 
     let totalQuantity = 0;
     let totalInvested = 0;
+    let totalCurrent = 0;
 
     for (const stock of stocks) {
+      let stockCurrentPrice = stock.currentPrice || stock.buyPrice;
+      
+      // Fetch live price from API
+      try {
+        const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${stock.symbol}&apikey=${API_KEY}`;
+        const response = await axios.get(url);
+        const quote = response.data['Global Quote'];
+        if (quote && quote['05. price']) {
+          stockCurrentPrice = parseFloat(quote['05. price']);
+          // Update the stock's currentPrice in database
+          await Stock.findByIdAndUpdate(stock._id, { currentPrice: stockCurrentPrice });
+        }
+      } catch (apiErr) {
+        console.error(`Error fetching price for ${stock.symbol}:`, apiErr.message);
+      }
+
       totalQuantity += stock.quantity;
       totalInvested += stock.buyPrice * stock.quantity;
+      totalCurrent += stockCurrentPrice * stock.quantity;
     }
 
     const response = {
       totalStocks: stocks.length,
       totalQuantity,
-      totalInvested: Number(totalInvested.toFixed(2))
+      totalInvested: Number(totalInvested.toFixed(2)),
+      totalCurrentValue: Number(totalCurrent.toFixed(2)),
+      totalProfitLoss: Number((totalCurrent - totalInvested).toFixed(2))
     };
 
     console.log('Stock summary:', response);
@@ -256,20 +308,37 @@ export const getPortfolioBreakdown = async (req, res) => {
     const stocks = await Stock.find({ user: userId });
     console.log(`Found ${stocks.length} stocks`);
 
-    const breakdown = stocks.map((stock) => {
+    const breakdown = await Promise.all(stocks.map(async (stock) => {
+      let currentPrice = stock.currentPrice || stock.buyPrice;
+      
+      // Fetch live price from API
+      try {
+        const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${stock.symbol}&apikey=${API_KEY}`;
+        const response = await axios.get(url);
+        const quote = response.data['Global Quote'];
+        if (quote && quote['05. price']) {
+          currentPrice = parseFloat(quote['05. price']);
+          // Update the stock's currentPrice in database
+          await Stock.findByIdAndUpdate(stock._id, { currentPrice });
+        }
+      } catch (apiErr) {
+        console.error(`Error fetching price for ${stock.symbol}:`, apiErr.message);
+        // Use stored currentPrice or fallback to buyPrice
+      }
+
       const investedValue = stock.buyPrice * stock.quantity;
-      const currentValue = (stock.currentPrice || stock.buyPrice) * stock.quantity;
+      const currentValue = currentPrice * stock.quantity;
 
       return {
         symbol: stock.symbol,
         quantity: Number(stock.quantity),
         buyPrice: Number(stock.buyPrice),
-        currentPrice: Number(stock.currentPrice || stock.buyPrice),
+        currentPrice: Number(currentPrice),
         investedValue: Number(investedValue.toFixed(2)),
         currentValue: Number(currentValue.toFixed(2)),
         profitLoss: Number((currentValue - investedValue).toFixed(2))
       };
-    });
+    }));
 
     console.log('Portfolio breakdown:', breakdown);
     res.json(breakdown);

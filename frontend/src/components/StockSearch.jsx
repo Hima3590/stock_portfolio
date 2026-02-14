@@ -77,7 +77,7 @@ export default function StockSearch({ onSelectStock }) {
           placeholder="Search stocks..."
           value={query}
           onChange={e => setQuery(e.target.value)}
-          className="flex-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
         />
         <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
           Search
@@ -88,15 +88,15 @@ export default function StockSearch({ onSelectStock }) {
       {error && <p className="text-red-600 mt-2">{error}</p>}
 
       {results.length > 0 && (
-        <ul className="mt-2 border rounded-md overflow-hidden">
+        <ul className="mt-2 border border-gray-700 rounded-md overflow-hidden bg-gray-900">
           {results.map(stock => (
             <li
               key={stock.symbol}
-              className="p-2 hover:bg-gray-100 cursor-pointer flex justify-between"
+              className="p-2 hover:bg-gray-800 cursor-pointer flex justify-between border-b border-gray-700 last:border-b-0"
               onClick={() => handleSelectStock(stock)}
             >
-              <span>{stock.symbol} - {stock.name}</span>
-              <span className="text-gray-500">{stock.region}</span>
+              <span className="text-white">{stock.symbol} - {stock.name}</span>
+              <span className="text-gray-400">{stock.region}</span>
             </li>
           ))}
         </ul>
@@ -105,21 +105,21 @@ export default function StockSearch({ onSelectStock }) {
       {infoLoading && <p className="mt-2 text-gray-600">Fetching stock info...</p>}
       {infoError && <p className="mt-2 text-red-600">{infoError}</p>}
       {stockInfo && (
-        <div className="mt-2 p-2 border rounded-md bg-gray-50">
-          <p><strong>Live Price:</strong> ${stockInfo.currentPrice.toFixed(2)}</p>
+        <div className="mt-2 p-4 border border-gray-700 rounded-lg bg-gray-900">
+          <p className="text-white"><strong>Live Price:</strong> ${stockInfo.currentPrice.toFixed(2)}</p>
           {stockInfo.notInPortfolio ? (
-            <p className="text-gray-600 italic mt-2">Add this stock to your portfolio to track profit/loss</p>
+            <p className="text-gray-400 italic mt-2">Add this stock to your portfolio to track profit/loss</p>
           ) : (
             <>
-              <p>
+              <p className="text-white">
                 <strong>Profit / Loss:</strong>{' '}
-                <span className={parseFloat(stockInfo.profitLoss) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                <span className={parseFloat(stockInfo.profitLoss) >= 0 ? 'text-green-400' : 'text-red-400'}>
                   ${stockInfo.profitLoss}
                 </span>
               </p>
-              <p>
+              <p className="text-white">
                 <strong>% Change:</strong>{' '}
-                <span className={parseFloat(stockInfo.percentChange) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                <span className={parseFloat(stockInfo.percentChange) >= 0 ? 'text-green-400' : 'text-red-400'}>
                   {stockInfo.percentChange}%
                 </span>
               </p>

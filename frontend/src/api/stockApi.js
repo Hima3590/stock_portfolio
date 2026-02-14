@@ -1,16 +1,6 @@
-import axios from 'axios';
+import axiosInstance from './axiosInstance';
 
 const API_URL = process.env.REACT_APP_API_URL + '/stocks';
-
-const axiosInstance = axios.create();
-
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 export const addStock = async (data) =>
   (await axiosInstance.post(API_URL, data)).data;

@@ -6,59 +6,95 @@ const Login = ({ onSwitch }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     try {
       const data = await loginUser({ email, password });
-      login(data.token); // store token & update context
+      login(data.token);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.error || 'Login failed');
+      setError(err.response?.data?.error || 'Invalid email or password');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Login</h2>
-      {error && <p className="text-red-600 mb-2">{error}</p>}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          className="border px-3 py-2 rounded"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          className="border px-3 py-2 rounded"
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
-        >
-          Login
-        </button>
-      </form>
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className="w-full max-w-sm">
+        <div className="bg-white rounded-3xl border-2 border-gray-300 shadow-2xl p-10 relative">
+          {/* Icon at top */}
+          <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-white rounded-full border-4 border-gray-300 p-4 shadow-lg">
+            <span className="text-4xl">📊</span>
+          </div>
 
-      {/* Switch to Register */}
-      <p className="mt-4 text-sm text-gray-600">
-        Don’t have an account?{' '}
-        <button
-          onClick={onSwitch}
-          className="text-blue-600 underline hover:text-blue-800"
-        >
-          Register
-        </button>
-      </p>
+          {/* Header spacing */}
+          <div className="mt-8 mb-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Sign In</h1>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded">
+              <p className="text-red-700 text-sm font-medium">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email Field */}
+            <div className="flex items-center border-b-2 border-gray-300 pb-1 focus-within:border-blue-500 transition">
+              <span className="text-2xl mr-3 text-gray-600">✉️</span>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="w-full bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none text-base"
+                placeholder="Email address"
+              />
+            </div>
+
+            {/* Password Field */}
+            <div className="flex items-center border-b-2 border-gray-300 pb-1 focus-within:border-blue-500 transition mt-6">
+              <span className="text-2xl mr-3 text-gray-600">🔒</span>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                className="w-full bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none text-base"
+                placeholder="Password"
+              />
+            </div>
+
+            {/* Login Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-black text-white font-bold py-3 rounded-lg mt-8 hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+              {loading ? 'Signing in...' : 'SIGN IN'}
+            </button>
+
+            {/* Register Link */}
+            <div className="text-center mt-6 border-t-2 border-gray-200 pt-6">
+              <p className="text-gray-600 text-sm">
+                Don't have an account?{' '}
+                <button
+                  onClick={onSwitch}
+                  className="text-gray-600 font-bold hover:text-gray-700 transition"
+                >
+                  CREATE ONE
+                </button>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };

@@ -36,16 +36,16 @@ export default function AddStock({ onStockAdded }) {
   };
 
   return (
-    <div className="mb-8">
-      <h2 className="text-2xl font-bold mb-4">Add Stock</h2>
-      <form onSubmit={handleSubmit} className="flex gap-4 flex-wrap">
+    <div className="mb-12">
+      <h2 className="text-2xl font-bold mb-6 text-white">Add Stock</h2>
+      <form onSubmit={handleSubmit} className="flex gap-4 flex-wrap bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg">
         <input
           type="text"
           placeholder="Symbol (e.g., AAPL)"
           value={symbol}
           onChange={(e) => setSymbol(e.target.value)}
           required
-          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
         />
         <input
           type="number"
@@ -55,7 +55,7 @@ export default function AddStock({ onStockAdded }) {
           required
           min="0"
           step="0.01"
-          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
         />
         <input
           type="number"
@@ -65,14 +65,14 @@ export default function AddStock({ onStockAdded }) {
           required
           min="0"
           step="0.01"
-          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
         />
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-medium"
         >
-          {loading ? 'Adding...' : 'Add Stock'}
+          {loading ? 'Adding...' : '+ Add Stock'}
         </button>
       </form>
     </div>
